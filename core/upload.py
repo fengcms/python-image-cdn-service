@@ -35,8 +35,8 @@ async def upimg(request):
     saveDir = STATIC_DIR + '/' + md5Name[0:2] + '/'
     savePath = saveDir + md5Name[2:] + '.' + imageSuffix
     resPath = md5Name + '.' + imageSuffix
-    if imageSuffix == 'svg':
-        resPath += '?sanitize=true'
+    # if imageSuffix == 'svg':
+    #     resPath += '?sanitize=true'
 
     # 如果文件夹不存在，就创建文件夹
     if not os.path.exists(saveDir):

@@ -23,7 +23,7 @@ def bytes2hex(bytes):
             hexstr += t
         return hexstr.lower()
 
-    except Exception as e
+    except Exception as e:
         return hexstr.lower()
 
 # 根据16进制字符串获取文件后缀

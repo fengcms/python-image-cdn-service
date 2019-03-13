@@ -52,7 +52,7 @@ async def Thumb(request, params, name):
             tmp[0][2:] + '-' + params + '.' + tmp[1]
 
     # 如果是 svg 图片，则直接返回原图，不执行压缩
-    if temp[1] == 'svg':
+    if tmp[1] == 'svg':
         return await file(imgPath)
     # 缩略图存在则直接返回
     elif hasFile(thumbPath):
