@@ -138,5 +138,5 @@ http://localhost:9000/thumb/fill-200-200/9194e7ed62ba83c3d181b2f70590ab12.jpg
 
 ## License
 
-![MIT](http://opensource.org/licenses/MIT)
+[MIT](http://opensource.org/licenses/MIT)
 Copyright &copy; 2019-present FungLeo
