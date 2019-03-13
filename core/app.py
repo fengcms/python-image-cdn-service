@@ -5,6 +5,7 @@ from sanic.exceptions import NotFound
 from config import STATIC_DIR
 from core.tool import hasFile, isImgName, checkThumbParams, return404
 from core.thumb import markThumb
+from core.upload import upimg
 
 app = Sanic(__name__)
 
@@ -17,9 +18,12 @@ async def CheckRequest(request):
     if request.method != 'GET' and way in ways:
         return text('', status=405)
 
-@app.route("/upload")
+    if request.method != 'POST' and way == 'upload':
+        return text('', status=405)
+
+@app.route("/upload", methods=['POST'])
 async def upload(request):
-    return text('x')
+    return await upimg(request)
 
 @app.route("/proto/<name>")
 async def Proto(request, name):
@@ -47,8 +51,11 @@ async def Thumb(request, params, name):
     thumbPath = STATIC_DIR + '/' + name[0:2] + '/' + \
             tmp[0][2:] + '-' + params + '.' + tmp[1]
 
+    # 如果是 svg 图片，则直接返回原图，不执行压缩
+    if temp[1] == 'svg':
+        return await file(imgPath)
     # 缩略图存在则直接返回
-    if hasFile(thumbPath):
+    elif hasFile(thumbPath):
         return await file(thumbPath)
     # 缩略图不存在则生成缩略图并返回
     else:
