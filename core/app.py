@@ -55,12 +55,6 @@ async def Thumb(request, params, name):
         return await markThumb(tmp[1], imgPath, thumbPath, params)
 
 
-    return text('ok')
-
-
-
-
-
 @app.exception(NotFound)
 async def ignore_404s(request, exception):
     return text('403', status=403)

@@ -1,15 +1,24 @@
-# import os
-# import re
+import os
+import shutil
 
 from PIL import Image
+import imageio
 from sanic.response import file
+from core.gif import hackGif
 
-def fillJpg(imgPath, thumbPath, width, height):
+def checkSuffix(suffix):
+    if suffix == 'jpg':
+        return 'jpeg'
+    return 'PNG'
+
+# 拉伸处理图片函数
+def fillImg(suffix, imgPath, thumbPath, ow, oh):
     image = Image.open(imgPath)
-    thumb = image.resize((width, height), Image.ANTIALIAS)
-    thumb.save(thumbPath, 'jpeg')
+    thumb = image.resize((ow, oh), Image.ANTIALIAS)
+    thumb.save(thumbPath, checkSuffix(suffix))
 
-def clipJpg(imgPath, thumbPath, ow, oh):
+# 裁剪处理图片函数
+def clipImg(suffix, imgPath, thumbPath, ow, oh):
     image = Image.open(imgPath)
     sw, sh = image.size
     # 长条图的裁剪
@@ -25,9 +34,10 @@ def clipJpg(imgPath, thumbPath, ow, oh):
         cx = int((tw - ow)/2)
         outImg = tmpImg.crop((cx, 0, cx+ow, oh))
     # 保存图片
-    outImg.save(thumbPath, 'jpeg')
+    outImg.save(thumbPath, checkSuffix(suffix))
 
-def zoomJpg(imgPath, thumbPath, ow, oh):
+# 缩放处理图片函数
+def zoomImg(suffix, imgPath, thumbPath, ow, oh):
     image = Image.open(imgPath)
     sw, sh = image.size
     outImg = Image.new('RGB',(ow, oh), '#FFFFFF')
@@ -44,22 +54,39 @@ def zoomJpg(imgPath, thumbPath, ow, oh):
         cy = int((oh - th) / 2)
         outImg.paste(tmpImg, (0, cy))
     # 保存图片
-    outImg.save(thumbPath, 'jpeg')
+    outImg.save(thumbPath, checkSuffix(suffix))
 
 async def markThumb(suffix, imgPath, thumbPath, params):
     arr = params.split('-')
     method = arr[0]
-    width = int(arr[1])
-    height = int(arr[2])
-    if method == 'fill':
-        if suffix != 'gif':
-            fillJpg(imgPath, thumbPath, width, height)
-            return await file(thumbPath, status=200)
-    if method == 'clip':
-        if suffix != 'gif':
-            clipJpg(imgPath, thumbPath, width, height)
-            return await file(thumbPath, status=200)
-    if method == 'zoom':
-        if suffix != 'gif':
-            zoomJpg(imgPath, thumbPath, width, height)
-            return await file(thumbPath, status=200)
+    ow = int(arr[1])
+    oh = int(arr[2])
+    if suffix != 'gif':
+        if method == 'fill':
+            fillImg(suffix, imgPath, thumbPath, ow, oh)
+        if method == 'clip':
+            clipImg(suffix, imgPath, thumbPath, ow, oh)
+        if method == 'zoom':
+            zoomImg(suffix, imgPath, thumbPath, ow, oh)
+    else:
+        # 将 gif 拆解为一组照片
+        tempGIf = hackGif(imgPath)
+        tempImgPath = tempGIf[0]
+        tempDirPath = tempGIf[1]
+        gifDur = tempGIf[2] / 1000
+        tempImg = []
+        # 压缩每一张照片
+        for i in tempImgPath:
+            if method == 'fill':
+                fillImg('gif', i, i, ow, oh)
+            if method == 'clip':
+                clipImg('gif', i, i, ow, oh)
+            if method == 'zoom':
+                zoomImg('gif', i, i, ow, oh)
+            tempImg.append(imageio.imread(i))
+        # 将拆解出来的图片重新组装为gif图片
+        imageio.mimsave(thumbPath, tempImg, 'GIF', duration = gifDur)
+        # 删除临时文件夹
+        shutil.rmtree(tempDirPath)
+
+    return await file(thumbPath, status=200)
