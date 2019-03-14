@@ -1,6 +1,8 @@
 import os
 import re
+import json as bejson
 from sanic.response import file, json
+import matplotlib.font_manager as fontman
 
 # 成功以及失败的返回脚本
 def ok(data):
@@ -39,17 +41,26 @@ def getSuffix(hexStr):
             return SUPPORT_TYPE[i]
     return 'error'
 
+# 根据图片后缀返回PIL存储类型
+def checkSuffix(suffix):
+    if suffix == 'jpg':
+        return 'JPEG'
+    return 'PNG'
+
 # 检查文件是否存在
 def hasFile(FilePath):
     return os.path.exists(FilePath)
 
 # 检查字符串是否属于MD5值
 def isMd5(String):
-    res = re.match('[a-fA-F0-9]{32}', String)
-    if res == None:
-        return False
-    else:
-        return True
+    res = re.match('[a-fA-F0-9]{32}', str(String))
+    return res != None
+
+# 检查字符串是否属于颜色值
+def isColor(String):
+    res = re.match('^(#[0-9a-f]{3}|#(?:[0-9a-f]{2}){2,4}|(rgb|hsl)a?\((\d+%?(deg|rad|grad|turn)?[,\s]+){2,3}[\s\/]*[\d\.]+%?\))$', str(String).lower())
+    return res != None
+
 # 检查图片文件名是否符合规定
 def isImgName(name):
     suffixs = ['jpg', 'png', 'gif', 'svg']
@@ -83,4 +94,41 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+# 判断一个字符串是否可以转化为字典
+def isDictStr(String):
+    try:
+        bejson.loads(String)
+        return True
+    except:
+        return False
+
+# 判断一个数字是否是正整数
+def isNum(num):
+    try:
+        num = int(str(num))
+        if num > 0:
+            return True
+        else:
+            return False
+    except:
+        return False
+
+# 根据字体名称，从系统中找出字体路径
+def findTtfPath(fontName):
+    fontName = fontName.lower()
+    allFonts = fontman.findSystemFonts(fontpaths=None, fontext='ttf')
+    likeFonts = []
+    for i in allFonts:
+        iName = i.split('/')[-1].split('.')[0].lower()
+        if fontName == iName:
+            return i
+        elif fontName in iName:
+            likeFonts.append(i)
+    if len(likeFonts) != 0:
+        return likeFonts[0]
+    return findTtfPath('Arial')
+
+if __name__ == "__main__":
+    res = findTtfPath('Arial')
+    print(res)
 

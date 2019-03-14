@@ -5,11 +5,7 @@ from PIL import Image
 import imageio
 from sanic.response import file
 from core.gif import hackGif
-
-def checkSuffix(suffix):
-    if suffix == 'jpg':
-        return 'jpeg'
-    return 'PNG'
+from core.tool import checkSuffix
 
 # 拉伸处理图片函数
 def fillImg(suffix, imgPath, thumbPath, ow, oh):
