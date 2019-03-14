@@ -36,8 +36,9 @@ def calcMarkParams(params):
     if not mark['type'] in ['img', 'text']:
         return fail('mark type must be "img" or "text"', 412)
 
+
     # 默认水印位置为图片右下角
-    mParam = {'location': ['right', 'bottom']}
+    mParam = {'type': mType, 'location': ['right', 'bottom']}
 
     # 如果参数中包含水印位置参数，则重设水印位置参数
     if 'location' in mark:
@@ -46,9 +47,10 @@ def calcMarkParams(params):
             return fail('mark location must be array', 412)
         if len(mLoca) != 2:
             return fail('mark location array length must be 2', 412)
-        for i in mLoca:
-            if not i in ['left', 'top', 'right', 'bottom', 'center']:
-                return fail('mark location value must in "left", "top", "right", "bottom", "center"', 412)
+        if not mLoca[0] in ['left', 'right', 'center']:
+            return fail('mark location[0] value must in "left", "right", "center"', 412)
+        if not mLoca[1] in ['top', 'bottom', 'center']:
+            return fail('mark location[1] value must in "top", "bottom", "center"', 412)
         mParam['location'] = mLoca
 
     # 图片水印参数处理
@@ -112,6 +114,37 @@ def calcMarkParams(params):
             mParam['ttf'] = findTtfPath(mTtf)
     return mParam
 
+# 添加水印参数
+def makeMark(sImg, mParam):
+    sW, sH = sImg.size
+    print(mParam)
+    mType = mParam['type']
+    mLocaX = mParam['location'][0]
+    mLocaY = mParam['location'][1]
+    if mType == 'img':
+        mW = mParam['imgSize'][0]
+        mH = mParam['imgSize'][1]
+        if sW >= (mW + 40) and sH >= (mH + 40):
+            mark = Image.open(mParam['imgPath']).resize((mW, mH), Image.ANTIALIAS)
+            layer = Image.new('RGBA', sImg.size, (0,0,0,0))
+            mX = 20
+            mY = 20
+            if mLocaX == 'center':
+                mX = int((sW - mW) / 2)
+            if mLocaX == 'right':
+                mX = sW - mW - 20
+            if mLocaY == 'center':
+                mY = int((sH - mH) / 2)
+            if mLocaY == 'bottom':
+                mY = sH - mH - 20
+            layer.paste(mark, (mX, mY))
+            oImg = Image.composite(layer, sImg, layer)
+            return oImg
+        else:
+            return sImg
+
+
+
 # 存储图片文件函数
 def saveImage(savePath, image):
     tempFile = open(savePath, 'wb')
@@ -158,7 +191,7 @@ async def upimg(request):
 
         # PNG 和 JPG 图片的处理
         if imageSuffix != 'gif':
-            oImg = None
+            oImg = sImg
             # 处理缩放图片
             if 'zoom' in params:
                 zoom = params['zoom']
@@ -170,8 +203,10 @@ async def upimg(request):
                     oImg = zoomImg(sImg, sw, sh, zoom)
             # 处理水印参数
             mParam = calcMarkParams(params)
-            print(mParam)
-
+            if not isinstance(mParam, dict) and mParam != False:
+                return mParam
+            else:
+                oImg = makeMark(oImg, mParam)
 
             # 保存图片
             oImg.save(savePath, checkSuffix(imageSuffix))
