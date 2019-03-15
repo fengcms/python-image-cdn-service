@@ -1,4 +1,4 @@
-import os
+import os, sys
 import re
 import json as bejson
 from sanic.response import file, json
@@ -113,22 +113,33 @@ def isNum(num):
     except:
         return False
 
-# 根据字体名称，从系统中找出字体路径
+# 根据字体名称，从预置字体文件夹中返回字体路径
 def findTtfPath(fontName):
-    fontName = fontName.lower()
-    allFonts = fontman.findSystemFonts(fontpaths=None, fontext='ttf')
-    likeFonts = []
-    for i in allFonts:
-        iName = i.split('/')[-1].split('.')[0].lower()
-        if fontName == iName:
-            return i
-        elif fontName in iName:
-            likeFonts.append(i)
-    if len(likeFonts) != 0:
-        return likeFonts[0]
-    return findTtfPath('Arial')
+    pathDir = os.path.split(os.path.abspath(sys.argv[0]))[0] + '/fonts'
+    for root, dirs, files in os.walk(pathDir):
+        for i in files:
+            if fontName in i:
+                return pathDir + '/' + i
+
+    return pathDir + '/PingFang.ttc'
+
+# 根据字体名称，从系统中找出字体路径
+# def findTtfPath(fontName):
+#     fontName = fontName.lower()
+#     allFonts = fontman.findSystemFonts(fontpaths=None)
+#     likeFonts = []
+#     for i in allFonts:
+#         iName = i.split('/')[-1].split('.')[0].lower()
+#         if fontName == iName:
+#             return i
+#         elif fontName in iName:
+#             likeFonts.append(i)
+#     print(allFonts)
+#     if len(likeFonts) != 0:
+#         return likeFonts[0]
+#     return findTtfPath('Arial')
 
 if __name__ == "__main__":
-    res = findTtfPath('Arial')
+    res = findTtfPath('ping')
     print(res)
 

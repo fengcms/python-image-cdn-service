@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
-# from sanic.response import json, text, file
 import os, sys
 import hashlib
 import json
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-# import pygame
 from io import BytesIO
 from core.tool import ok, fail, bytes2hex, getSuffix, isDictStr, isNum,\
         checkSuffix, hasFile, isColor, findTtfPath
@@ -36,7 +34,6 @@ def calcMarkParams(params):
     mType = mark['type']
     if not mark['type'] in ['img', 'text']:
         return fail('mark type must be "img" or "text"', 412)
-
 
     # 默认水印位置为图片右下角
     mParam = {'type': mType, 'location': ['right', 'bottom']}
@@ -113,17 +110,20 @@ def calcMarkParams(params):
             if not isinstance(mTtf, str):
                 return fail('Text mark ttf field must be String', 412)
             mParam['ttf'] = findTtfPath(mTtf)
+
     return mParam
 
 # 制作文字水印图片
 def makeTextImg(param):
+    # 利用 getbox 方法计算出文字水印所需要的尺寸大小
     def calcImgWidth(param, text):
         im = Image.new('RGB', (1000, param['size'] + 10), (0, 0, 0))
         imDraw = ImageDraw.Draw(im)
         imFont = ImageFont.truetype(param['ttf'], param['size'])
         imDraw.text((5, 5), text, fill="#FFFFFF", font=imFont)
         return im.getbbox()[2] + 5
-    # text = unicode(param['text'],'UTF-8')
+
+    # 处理文字，防止中文乱码
     text = u'{0}'.format(param['text'])
     mW = calcImgWidth(param, text)
     mH = param['size'] + 10
@@ -131,7 +131,6 @@ def makeTextImg(param):
     draw = ImageDraw.Draw(blank)
     font = ImageFont.truetype(param['ttf'], param['size'])
     draw.text((5, 5), text, fill=param['color'], font=font)
-    # draw.text((5, 5), u'hi,中文x', fill=param['color'], font=font)
     return blank
 
 # 叠加水印函数
@@ -169,8 +168,6 @@ def makeMark(sImg, mParam):
         mark = makeTextImg(mParam)
         mW, mH = mark.size
         return addMark(sImg, mark, mW, mH, mLocaX, mLocaY)
-
-
 
 # 存储图片文件函数
 def saveImage(savePath, image):
@@ -240,25 +237,6 @@ async def upimg(request):
         else:
             saveImage(savePath, image)
 
-
-    # 水印功能回头开发，代码先行封闭
-    # # 如果是 jpg 图片，则添加水印
-    # if imageSuffix == 'jpg':
-    #     bImg = BytesIO(image)
-    #     img = Image.open(bImg)
-    #     imgW, imgH = img.size
-
-    #     if imgW >= 300 and imgH >= 100:
-    #         mark = Image.open("mark.png")
-    #         layer = Image.new('RGBA', img.size, (0,0,0,0))
-    #         layer.paste(mark, (imgW - 180, imgH - 60))
-    #         out = Image.composite(layer, img, layer)
-    #         out.save(savePath, 'JPEG', quality = 100)
-    #     else:
-    #         saveImage(savePath, image)
-
-    # # 否则直接将文件写入到硬盘
-        # saveImage(savePath, image)
     else:
         saveImage(savePath, image)
 
