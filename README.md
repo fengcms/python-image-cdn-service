@@ -83,6 +83,7 @@ python3 run.py
 
 ### 上传图片
 
+#### 普通上传
 ```
 curl http://localhost:9000/upload -F "file=@__YOUR__IMAGE__PATH__"
 ```
@@ -102,6 +103,52 @@ curl http://localhost:9000/upload -F "file=@__YOUR__IMAGE__PATH__"
 }
 ```
 获取图片只需要根据这个文件名加上不同的参数就可以获取了。
+
+#### 限制最大尺寸上传以及上传图片自动添加水印
+
+在上传图片的时候，采用的是 `form-data` 方式的 POST 提交，因此，想要传输参数的话，是不能直接传输 `json` 格式的数据的。因此，我用一个 `data` 字段，传输一个参数json字符串过去即可。
+```
+curl http://localhost:9000/upload -F "file=@__YOUR__IMAGE__PATH__" -F 'data={"zoom":200,"mark":{"type":"text","text":"hi,水印","color":"#00F","size":25,"ttf":"Heiti","location":["center","center"]}}'
+```
+
+命令行下的提交是如上这样的。参数说明如下：
+
+```json
+{
+  // 最长边尺寸，只能是正整数
+  // 例如设置为400则800*600的图片会压缩为400*300
+  // 而600*800的图片会压缩为300*400
+  // 如果图片尺寸小于设置数字，则会原图直接保存
+  "zoom": 300,
+  // 图片水印参数
+  "mark": {
+    // 类型 可以为 text 或者 img，必填
+    "type": "img",
+    // 水印图片的 md5 文件名，将水印图片无参数上传就可以得到，必填
+    "imgName": "c84739f4dd318edee5b5655bc3091708.png",
+    // 水印尺寸，选填。如不填写，则自动读取水印图片的默认尺寸
+    "imgSize": [150, 40],
+    // 水印位置，第一个参数为X轴，支持 left center right 等参数
+    // 第二个参数为Y轴位置，支持 top center bottom 等参数
+    // 选填。默认为右下角。
+    "location": ["right", "bottom"]
+  },
+  // 文字水印参数
+  "mark": {
+    "type": "text",
+    // 水印文字，必填。
+    "text": "这是一个水印文字",
+    // 水印颜色，选填。默认白色。
+    "color": "#FFFFFF",
+    // 水印文字大小，选填。默认20，最小18。
+    "size": 18,
+    // 水印字体，需要添加其他字体请将字体文件放到 fonts 文件夹中
+    "ttf": "PingFang",
+    "location": ["right", "bottom"]
+  }
+}
+```
+图片水印参数和文字水印参数不能同时使用。
 
 ### 获取图片
 
