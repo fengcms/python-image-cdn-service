@@ -66,7 +66,7 @@ async def markThumb(suffix, imgPath, thumbPath, params):
             zoomImg(suffix, imgPath, thumbPath, ow, oh)
     else:
         # 将 gif 拆解为一组照片
-        tempGIf = hackGif(imgPath)
+        tempGIf = hackGif(Image.open(imgPath), imgPath)
         tempImgPath = tempGIf[0]
         tempDirPath = tempGIf[1]
         gifDur = tempGIf[2] / 1000

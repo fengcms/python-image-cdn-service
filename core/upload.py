@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 import os, sys
+import shutil
 import hashlib
 import json
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+import imageio
 from io import BytesIO
 from core.tool import ok, fail, bytes2hex, getSuffix, isDictStr, isNum,\
         checkSuffix, hasFile, isColor, findTtfPath
+from core.gif import hackGif
 from config import STATIC_DIR
-
-# 检查缩小参数
-def checkZoomParams(zoom):
-    if not isNum(zoom):
-        return fail('zoom value must be Positive integer', 412)
 
 # 缩小处理函数
 def zoomImg(sImg, sw, sh, zoom):
@@ -219,7 +217,8 @@ async def upimg(request):
             # 处理缩放图片
             if 'zoom' in params:
                 zoom = params['zoom']
-                checkZoomParams(zoom)
+                if not isNum(zoom):
+                    return fail('zoom value must be Positive integer', 412)
                 # 如果原图尺寸小于缩放尺寸，则直接保存
                 if sw <= zoom and sh <= zoom:
                     saveImage(savePath, image)
@@ -229,13 +228,44 @@ async def upimg(request):
             mParam = calcMarkParams(params)
             if not isinstance(mParam, dict) and mParam != False:
                 return mParam
-            else:
+            if isinstance(mParam, dict):
                 oImg = makeMark(oImg, mParam)
-
             # 保存图片
             oImg.save(savePath, checkSuffix(imageSuffix))
+            oImg.close()
+
+        # 处理 gif 图片
         else:
-            saveImage(savePath, image)
+            oImg = sImg
+            # 将 gif 拆解为一组照片
+            tempGIf = hackGif(sImg, savePath)
+            tempImgPath = tempGIf[0]
+            tempDirPath = tempGIf[1]
+            gifDur = tempGIf[2] / 1000
+            tempImg = []
+            # 压缩每一张照片
+            for i in tempImgPath:
+                tmp = Image.open(i)
+                if 'zoom' in params:
+                    zoom = params['zoom']
+                    if not isNum(zoom):
+                        return fail('zoom value must be Positive integer', 412)
+                    # 如果原图尺寸小于缩放尺寸，则直接保存
+                    if sw > zoom and sh > zoom:
+                        tmp = zoomImg(tmp, sw, sh, zoom)
+                # 处理水印参数
+                mParam = calcMarkParams(params)
+                if not isinstance(mParam, dict) and mParam != False:
+                    return mParam
+                if isinstance(mParam, dict):
+                    tmp = makeMark(tmp, mParam)
+                tmp.save(i, 'PNG')
+                tempImg.append(imageio.imread(i))
+            # 将拆解出来的图片重新组装为gif图片
+            imageio.mimsave(savePath, tempImg, 'GIF', duration = gifDur)
+            # 删除临时文件夹
+            # shutil.rmtree(tempDirPath)
+            # saveImage(savePath, image)
 
     else:
         saveImage(savePath, image)

@@ -123,22 +123,6 @@ def findTtfPath(fontName):
 
     return pathDir + '/PingFang.ttc'
 
-# 根据字体名称，从系统中找出字体路径
-# def findTtfPath(fontName):
-#     fontName = fontName.lower()
-#     allFonts = fontman.findSystemFonts(fontpaths=None)
-#     likeFonts = []
-#     for i in allFonts:
-#         iName = i.split('/')[-1].split('.')[0].lower()
-#         if fontName == iName:
-#             return i
-#         elif fontName in iName:
-#             likeFonts.append(i)
-#     print(allFonts)
-#     if len(likeFonts) != 0:
-#         return likeFonts[0]
-#     return findTtfPath('Arial')
-
 if __name__ == "__main__":
     res = findTtfPath('ping')
     print(res)

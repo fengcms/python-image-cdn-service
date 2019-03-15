@@ -3,8 +3,8 @@ import os
 from PIL import Image
 from core.tool import mkdir
  
-def analyseGif(path):
-    im = Image.open(path)
+def analyseGif(im):
+#    im = Image.open(path)
     results = {
         'size': im.size,
         'mode': 'full',
@@ -24,9 +24,9 @@ def analyseGif(path):
     return results
  
  
-def hackGif(path):
-    mode = analyseGif(path)['mode']
-    im = Image.open(path)
+def hackGif(im, path):
+    mode = analyseGif(im)['mode']
+    #im = Image.open(path)
     i = 0
     p = im.getpalette()
     last_frame = im.convert('RGBA')
