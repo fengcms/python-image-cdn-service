@@ -4,7 +4,8 @@
 import os, sys
 import hashlib
 import json
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+# import pygame
 from io import BytesIO
 from core.tool import ok, fail, bytes2hex, getSuffix, isDictStr, isNum,\
         checkSuffix, hasFile, isColor, findTtfPath
@@ -114,34 +115,60 @@ def calcMarkParams(params):
             mParam['ttf'] = findTtfPath(mTtf)
     return mParam
 
+# 制作文字水印图片
+def makeTextImg(param):
+    def calcImgWidth(param, text):
+        im = Image.new('RGB', (1000, param['size'] + 10), (0, 0, 0))
+        imDraw = ImageDraw.Draw(im)
+        imFont = ImageFont.truetype(param['ttf'], param['size'])
+        imDraw.text((5, 5), text, fill="#FFFFFF", font=imFont)
+        return im.getbbox()[2] + 5
+    # text = unicode(param['text'],'UTF-8')
+    text = u'{0}'.format(param['text'])
+    mW = calcImgWidth(param, text)
+    mH = param['size'] + 10
+    blank = Image.new('RGBA', (mW, mH), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(blank)
+    font = ImageFont.truetype(param['ttf'], param['size'])
+    draw.text((5, 5), text, fill=param['color'], font=font)
+    # draw.text((5, 5), u'hi,中文x', fill=param['color'], font=font)
+    return blank
+
+# 叠加水印函数
+def addMark(sImg, mark, mW, mH, mLocaX, mLocaY):
+    sW, sH = sImg.size
+    if sW >= (mW + 20) and sH >= (mH + 20):
+        layer = Image.new('RGBA', sImg.size, (0,0,0,0))
+        mX = 10
+        mY = 10
+        if mLocaX == 'center':
+            mX = int((sW - mW) / 2)
+        if mLocaX == 'right':
+            mX = sW - mW - 10
+        if mLocaY == 'center':
+            mY = int((sH - mH) / 2)
+        if mLocaY == 'bottom':
+            mY = sH - mH - 10
+        layer.paste(mark, (mX, mY))
+        oImg = Image.composite(layer, sImg, layer)
+        return oImg
+    else:
+        return sImg
+
 # 添加水印参数
 def makeMark(sImg, mParam):
-    sW, sH = sImg.size
-    print(mParam)
     mType = mParam['type']
     mLocaX = mParam['location'][0]
     mLocaY = mParam['location'][1]
     if mType == 'img':
         mW = mParam['imgSize'][0]
         mH = mParam['imgSize'][1]
-        if sW >= (mW + 40) and sH >= (mH + 40):
-            mark = Image.open(mParam['imgPath']).resize((mW, mH), Image.ANTIALIAS)
-            layer = Image.new('RGBA', sImg.size, (0,0,0,0))
-            mX = 20
-            mY = 20
-            if mLocaX == 'center':
-                mX = int((sW - mW) / 2)
-            if mLocaX == 'right':
-                mX = sW - mW - 20
-            if mLocaY == 'center':
-                mY = int((sH - mH) / 2)
-            if mLocaY == 'bottom':
-                mY = sH - mH - 20
-            layer.paste(mark, (mX, mY))
-            oImg = Image.composite(layer, sImg, layer)
-            return oImg
-        else:
-            return sImg
+        mark = Image.open(mParam['imgPath']).resize((mW, mH), Image.ANTIALIAS)
+        return addMark(sImg, mark, mW, mH, mLocaX, mLocaY)
+    else:
+        mark = makeTextImg(mParam)
+        mW, mH = mark.size
+        return addMark(sImg, mark, mW, mH, mLocaX, mLocaY)
 
 
 
