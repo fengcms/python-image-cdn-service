@@ -264,8 +264,7 @@ async def upimg(request):
             # 将拆解出来的图片重新组装为gif图片
             imageio.mimsave(savePath, tempImg, 'GIF', duration = gifDur)
             # 删除临时文件夹
-            # shutil.rmtree(tempDirPath)
-            # saveImage(savePath, image)
+            shutil.rmtree(tempDirPath)
 
     else:
         saveImage(savePath, image)
